@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package distributed_trading_system.trade.v1;
+
+option go_package = "github.com/williamntlam/distributed-trading-system/api/proto/v1";
+
+service OrderEntry {
+    rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
+    rpc CancelOrder(CancelOrderRequest) returns (OrderResponse);
+    rpc ModifyOrder(ModifyOrderRequest) returns (OrderResponse);
+}
+
+enum Side {
+    SIDE_UNSPECIFIED = 0;
+    SIDE_BUY = 1;
+    SIDE_SELL = 2;
+}
+
+enum OrderType {
+    ORDER_TYPE_UNSPECIFIED = 0;
+    ORDER_TYPE_LIMIT = 1;
+    ORDER_TYPE_MARKET = 2;
+}
+
+message CreateOrderRequest {
+    string client_order_id = 1; // Unique ID from the trader
+    uint64 client_id = 2;       // Internal user ID
+    string symbol = 3;          // e.g., "AAPL"
+    Side side = 4;
+    OrderType type = 5;
+    
+    // Price & Qty (Using int64 for fixed-point math)
+    int64 price = 6;            
+    uint32 quantity = 7;
+    
+    int64 timestamp_ns = 8;     // Forensic: Origin time
+}
+
+message CancelOrderRequest {
+    string client_order_id = 1; // The ID of the order to pull
+    uint64 client_id = 2;
+    string symbol = 3;
+}
+
+message ModifyOrderRequest {
+    string client_order_id = 1; // Targeted order
+    optional int64 new_price = 2;    // Optional: Only update if provided
+    optional uint32 new_quantity = 3; 
+}
+
+message OrderResponse {
+    bool success = 1;
+    string message = 2;           // e.g., "Accepted", "Rejected: Low Funds"
+    string exchange_order_id = 3; // The ID assigned by the C++ engine
+}
